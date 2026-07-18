@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ink: #05070b;
+  --color-ink-soft: #0a0e16;
+  --color-paper: #eaf0f7;
+  --color-muted: #93a0b2;
+  --color-amber: #ffb84d;
+  --color-amber-deep: #ff9e2c;
+  --color-cyan: #8ed6ff;
+
+  --font-display: var(--font-sans), "Manrope", system-ui, sans-serif;
+  --font-sans: var(--font-sans), "Manrope", system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--color-ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Small overline label: uppercase, tracked-out, quiet */
+.hud-label {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* Blinking status dot */
+@keyframes solis-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.solis-pulse {
+  animation: solis-pulse 2.4s ease-in-out infinite;
+}
+
+/* Loading bar shimmer */
+@keyframes solis-scan {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .solis-pulse,
+  .solis-scan {
+    animation: none !important;
+  }
 }
