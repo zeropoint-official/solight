@@ -118,7 +118,7 @@ export default function ScatterManifesto({
       style={{ height, zIndex: 30 }}
     >
       <motion.div
-        className="sticky top-0 flex min-h-screen w-full flex-col items-center justify-center px-6 text-center md:px-12"
+        className="sticky top-0 flex min-h-svh w-full flex-col items-center justify-center overflow-hidden px-6 text-center md:px-12"
         style={{
           rotateX,
           scale,

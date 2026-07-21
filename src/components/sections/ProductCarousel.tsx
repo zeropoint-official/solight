@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { assetUrl } from "@/lib/assets";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -12,11 +13,11 @@ if (typeof window !== "undefined") {
 type Product = { src: string; name: string; spec: string };
 
 const PRODUCTS: Product[] = [
-  { src: "/lights/lightm1.png", name: "Meridian", spec: "6,400 lm · 72 h autonomy" },
-  { src: "/lights/lightm2.png", name: "Halo", spec: "Zero-grid · IP66" },
-  { src: "/lights/lightm3.png", name: "Arc", spec: "Adaptive optics · 15-yr cell" },
-  { src: "/lights/lightm4-cut.png", name: "Lumen", spec: "Motion-aware · 4000 K" },
-  { src: "/lights/lightm5-cut.png", name: "Orbit", spec: "Dusk-to-dawn · Off-grid" },
+  { src: assetUrl("/lights/lightm1.png"), name: "Meridian", spec: "6,400 lm · 72 h autonomy" },
+  { src: assetUrl("/lights/lightm2.png"), name: "Halo", spec: "Zero-grid · IP66" },
+  { src: assetUrl("/lights/lightm3.png"), name: "Arc", spec: "Adaptive optics · 15-yr cell" },
+  { src: assetUrl("/lights/lightm4-cut.png"), name: "Lumen", spec: "Motion-aware · 4000 K" },
+  { src: assetUrl("/lights/lightm5-cut.png"), name: "Orbit", spec: "Dusk-to-dawn · Off-grid" },
 ];
 
 export function ProductCarousel() {
@@ -30,7 +31,18 @@ export function ProductCarousel() {
     if (!section || !track) return;
 
     const cards = gsap.utils.toArray<HTMLElement>(".pc-card");
-    const distance = () => Math.max(0, track.scrollWidth - window.innerWidth);
+    // Travel far enough that the LAST card lands dead-centre. We can't use
+    // track.scrollWidth — flex containers drop the trailing padding-right from
+    // it, so the run would stop one card short (Orbit never reaching centre).
+    // Measuring the last card's own position centres it exactly regardless.
+    const distance = () => {
+      const last = cards[cards.length - 1];
+      if (!last) return 0;
+      return Math.max(
+        0,
+        last.offsetLeft + last.offsetWidth / 2 - window.innerWidth / 2,
+      );
+    };
 
     // Each light grows toward full size as it nears the viewport's centre, so
     // whatever sits in the middle is always the largest — a smooth focal drift.
@@ -92,7 +104,7 @@ export function ProductCarousel() {
   return (
     <section
       ref={sectionRef}
-      className="relative flex h-screen w-full flex-col overflow-hidden"
+      className="relative flex h-svh w-full flex-col overflow-hidden"
       style={
         {
           // Card width is shared with the track padding so the first and last

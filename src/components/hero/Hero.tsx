@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 import {
   CLIPS,
   CROSSFADE_SEC,
@@ -37,6 +43,46 @@ export function Hero() {
 
   const [stage, setStage] = useState<Stage>("loading");
   const [opacity, setOpacity] = useState<number[]>([1, 0, 0, 0, 0]);
+
+  // Elegant cursor parallax: the overscaled video stack drifts a few pixels
+  // opposite the cursor, eased through a soft spring. Copy and wash stay put.
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const px = useMotionValue(0);
+  const py = useMotionValue(0);
+  const spring = { stiffness: 60, damping: 20, mass: 0.6 };
+  const sx = useSpring(px, spring);
+  const sy = useSpring(py, spring);
+  const DRIFT = 18; // max px of travel — deliberately small
+  const tx = useTransform(sx, (v) => v * -DRIFT);
+  const ty = useTransform(sy, (v) => v * -DRIFT);
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const fine = window.matchMedia("(pointer: fine)").matches;
+    if (reduce || !fine) return;
+
+    const onMove = (e: PointerEvent) => {
+      const el = sectionRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      // Normalize to -0.5..0.5 around the centre.
+      px.set((e.clientX - r.left) / r.width - 0.5);
+      py.set((e.clientY - r.top) / r.height - 0.5);
+    };
+    const onLeave = () => {
+      px.set(0);
+      py.set(0);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerdown", onMove, { passive: true });
+    document.addEventListener("mouseleave", onLeave);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onMove);
+      document.removeEventListener("mouseleave", onLeave);
+    };
+  }, [px, py]);
 
   // The switch shows intent the instant it's pressed; the video catches up.
   const switchOn = stage === "turningOn" || stage === "nightOn";
@@ -127,29 +173,39 @@ export function Hero() {
   }, [stage, crossfadeTo]);
 
   return (
-    <section className="relative h-[100svh] w-full overflow-hidden bg-ink">
-      {/* Stacked video layers — only opacity ever changes between them. */}
-      {CLIPS.map((clip, i) => (
-        <video
-          key={clip.key}
-          ref={(el) => {
-            videoRefs.current[i] = el;
-          }}
-          src={preload.blobs[clip.src]}
-          poster={i === INTRO ? POSTER : undefined}
-          muted
-          playsInline
-          preload="auto"
-          loop={clip.kind === "loop"}
-          onTimeUpdate={clip.kind === "once" ? () => handleTimeUpdate(i) : undefined}
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{
-            opacity: opacity[i],
-            transition: `opacity ${CROSSFADE_MS}ms linear`,
-            willChange: "opacity",
-          }}
-        />
-      ))}
+    <section
+      ref={sectionRef}
+      className="relative h-[100svh] w-full overflow-hidden bg-ink"
+    >
+      {/* Stacked video layers — only opacity ever changes between them. The
+          wrapper is slightly overscaled so the cursor drift never bares an
+          edge, and it carries the parallax transform for the whole stack. */}
+      <motion.div
+        className="absolute inset-0"
+        style={{ x: tx, y: ty, scale: 1.08, willChange: "transform" }}
+      >
+        {CLIPS.map((clip, i) => (
+          <video
+            key={clip.key}
+            ref={(el) => {
+              videoRefs.current[i] = el;
+            }}
+            src={preload.blobs[clip.src]}
+            poster={i === INTRO ? POSTER : undefined}
+            muted
+            playsInline
+            preload="auto"
+            loop={clip.kind === "loop"}
+            onTimeUpdate={clip.kind === "once" ? () => handleTimeUpdate(i) : undefined}
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{
+              opacity: opacity[i],
+              transition: `opacity ${CROSSFADE_MS}ms linear`,
+              willChange: "opacity",
+            }}
+          />
+        ))}
+      </motion.div>
 
       {/* Legibility wash: a soft pool of shade centred on the copy, plus quiet
           darkening at the very top and bottom for the nav and section seam. */}

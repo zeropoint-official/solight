@@ -16,6 +16,11 @@
 html,
 body {
   background: var(--color-ink);
+  /* Kill stray horizontal overflow (scattered manifesto words, pinned carousel
+     track) without breaking sticky/pinning — `clip` never makes a scroll
+     container the way `hidden` would. */
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 body {
